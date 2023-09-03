@@ -1,7 +1,8 @@
+use std::sync::Arc;
+use anyhow::Result;
 use smithay::delegate_compositor;
 use smithay::reexports::wayland_server::Display;
 use smithay::wayland::compositor::{CompositorClientState, CompositorHandler, CompositorState};
-use std::sync::Arc;
 use wayland_server::backend::{ClientData, ClientId, DisconnectReason};
 use wayland_server::protocol::wl_surface::WlSurface;
 use wayland_server::{Client, ListeningSocket};
@@ -24,26 +25,23 @@ impl CompositorHandler for App {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<()> {
     let mut display: Display<App> = Display::new()?;
     let dh = display.handle();
 
     let compositor_state = CompositorState::new::<App>(&dh);
-
     let mut state = App { compositor_state };
 
-    let listener = ListeningSocket::bind("wayland-5").unwrap();
-
     let mut clients = Vec::new();
+    let listener = ListeningSocket::bind("wayland-1")?;
 
     loop {
-        if let Some(stream) = listener.accept().unwrap() {
+        if let Some(stream) = listener.accept()? {
             println!("Got a client: {:?}", stream);
 
             let client = display
                 .handle()
-                .insert_client(stream, Arc::new(ClientState::default()))
-                .unwrap();
+                .insert_client(stream, Arc::new(ClientState::default()))?;
             clients.push(client);
         }
 
